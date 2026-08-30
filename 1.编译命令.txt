@@ -1,0 +1,174 @@
+下面是 `编译.pdf` 里和 RK3576 LinuxSDK 编译相关的主要命令汇总。我已把路径按你当前目录整理为：
+
+`/home/ok3576/tronlong/rk3576_linux6.1_release`
+
+## 1. 配置编译环境
+
+U-Boot / Kernel 开发环境：
+
+```bash
+cd /home/ok3576/tronlong/rk3576_linux6.1_release
+
+export PATH=/home/ok3576/tronlong/rk3576_linux6.1_release/prebuilts/gcc/linux-x86/aarch64/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/:$PATH
+
+aarch64-none-linux-gnu-gcc -v
+```
+
+应用 / Buildroot 交叉编译环境：
+
+```bash
+source /home/ok3576/tronlong/rk3576_linux6.1_release/buildroot/output/rockchip_rk3576/host/environment-setup
+
+aarch64-buildroot-linux-gnu-gcc -v
+```
+
+注意：文档提示不要在同一个终端里先配置应用环境后再编 U-Boot / Kernel，否则可能导致系统镜像编译失败。
+
+## 2. 配置 LinuxSDK
+
+```bash
+cd /home/ok3576/tronlong/rk3576_linux6.1_release
+
+./build.sh lunch:tl3576_evm_defconfig
+```
+
+如修改设备树配置：
+
+```bash
+vi device/rockchip/rk3576/tl3576_evm_defconfig
+```
+
+例如从默认设备树切换到 LVDS：
+
+```bash
+#RK_KERNEL_DTS_NAME="tl3576-evm"
+RK_KERNEL_DTS_NAME="tl3576-lvds-1024x768"
+```
+
+修改后重新配置：
+
+```bash
+./build.sh lunch:tl3576_evm_defconfig
+```
+
+## 3. 一键完整编译
+
+编译 U-Boot、Kernel、Buildroot、Recovery，并打包生成系统镜像：
+
+```bash
+cd /home/ok3576/tronlong/rk3576_linux6.1_release
+
+./build.sh
+```
+
+输出目录：
+
+```bash
+rockdev/
+```
+
+主要产物包括：
+
+```text
+MiniLoaderAll.bin
+uboot.img
+boot.img
+rootfs.img
+recovery.img
+update.img
+```
+
+## 4. 局部编译
+
+单独编译 U-Boot：
+
+```bash
+cd /home/ok3576/tronlong/rk3576_linux6.1_release
+
+./build.sh uboot
+```
+
+单独编译内核：
+
+```bash
+cd /home/ok3576/tronlong/rk3576_linux6.1_release
+
+./build.sh kernel
+```
+
+单独编译文件系统：
+
+```bash
+cd /home/ok3576/tronlong/rk3576_linux6.1_release
+
+./build.sh buildroot
+```
+
+重新打包生成 `update.img`：
+
+```bash
+cd /home/ok3576/tronlong/rk3576_linux6.1_release
+
+./build.sh firmware
+```
+
+## 5. 配置菜单命令
+
+安装内核配置菜单依赖：
+
+```bash
+sudo apt-get install libncurses5-dev
+sudo apt-get install libncursesw5-dev
+```
+
+打开内核配置界面：
+
+```bash
+cd /home/ok3576/tronlong/rk3576_linux6.1_release
+
+./build.sh kernel-config
+```
+
+Buildroot 配置：
+
+```bash
+cd /home/ok3576/tronlong/rk3576_linux6.1_release/buildroot
+
+./envsetup.sh rockchip_rk3576
+make menuconfig
+make savedefconfig
+```
+
+## 6. Linux-RT 内核配置
+
+备份默认内核配置：
+
+```bash
+cd /home/ok3576/tronlong/rk3576_linux6.1_release/kernel
+
+cp arch/arm64/configs/rockchip_linux_defconfig arch/arm64/configs/rockchip_linux_defconfig-bak
+```
+
+叠加 RT 配置：
+
+```bash
+make ARCH=arm64 rockchip_linux_defconfig rockchip_rt.config
+make ARCH=arm64 savedefconfig
+mv defconfig arch/arm64/configs/rockchip_linux_defconfig
+```
+
+恢复默认内核配置：
+
+```bash
+cd /home/ok3576/tronlong/rk3576_linux6.1_release/kernel
+
+mv arch/arm64/configs/rockchip_linux_defconfig-bak arch/arm64/configs/rockchip_linux_defconfig
+```
+
+最常用流程一般是：
+
+```bash
+cd /home/ok3576/tronlong/rk3576_linux6.1_release
+./build.sh lunch:tl3576_evm_defconfig
+./build.sh
+```

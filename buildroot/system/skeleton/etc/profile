@@ -1,0 +1,45 @@
+export PATH=@PATH@
+
+if [ "$PS1" ]; then
+  if [ "$BASH" ]; then
+    # The file bash.bashrc already sets the default PS1.
+    # PS1='\h:\w\$ '
+    if [ -f /etc/bash.bashrc ]; then
+      . /etc/bash.bashrc
+    fi
+  else
+    if [ "`id -u`" -eq 0 ]; then
+      PS1='# '
+    else
+      PS1='$ '
+    fi
+  fi
+fi
+
+export EDITOR='/bin/vi'
+
+# Source configuration files from /etc/profile.d
+for i in /etc/profile.d/*.sh ; do
+	if [ -r "$i" ]; then
+		. $i
+	fi
+done
+unset i
+
+if [ -x /usr/bin/resize ] && termpath="`tty`"; then
+    # Make sure we are on a serial console (i.e. the device used
+    # starts with /dev/tty),
+    # otherwise we confuse e.g. the eclipse launcher which tries
+    # do use ssh
+    case "$termpath" in
+        /dev/console) resize >/dev/null;;
+        /dev/tty[A-z]*) resize >/dev/null
+    esac
+fi
+
+export LC_CTYPE=zh_CN.UTF-8
+export QT_TRONLONG_DISPLAY_CONFIG=HDMI
+
+#Set the volume to 70%
+amixer set Master 70%
+

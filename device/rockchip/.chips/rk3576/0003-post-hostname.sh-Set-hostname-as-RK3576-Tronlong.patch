@@ -1,0 +1,26 @@
+From f3ddb66b20d563ebc472a93811b31b2c95a37c2c Mon Sep 17 00:00:00 2001
+From: lyf <897565549@qq.com>
+Date: Thu, 24 Oct 2024 09:58:49 +0800
+Subject: [PATCH 3/5] post-hostname.sh: Set hostname as RK3576-Tronlong
+
+Signed-off-by: cy@tronlong.com <cy>
+---
+ common/scripts/post-hostname.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/common/scripts/post-hostname.sh b/common/scripts/post-hostname.sh
+index fdc0764..1b1d7b8 100755
+--- a/common/scripts/post-hostname.sh
++++ b/common/scripts/post-hostname.sh
+@@ -9,7 +9,7 @@ if [ "$RK_ROOTFS_HOSTNAME_DEFAULT" -a "$POST_OS" = debian ]; then
+ 	exit 0
+ fi
+ 
+-HOSTNAME="${RK_ROOTFS_HOSTNAME:-"$RK_CHIP-$POST_OS"}"
++HOSTNAME="RK3576-Tronlong"
+ 
+ message "Setting hostname: $HOSTNAME"
+ 
+-- 
+2.34.1
+

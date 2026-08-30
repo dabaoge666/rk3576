@@ -1,0 +1,102 @@
+# =============================================================================
+# GitHub 目标仓: https://github.com/dabaoge666/rk3576.git
+# 单文件上限 100MB；整包 SDK ~66G，必须排除编译产物和大二进制。
+# =============================================================================
+
+# --- 编译产物（可重建，约 50G+）---
+/output/
+/rockdev
+/buildroot/output/
+/buildroot/dl/
+*.img
+*.wic
+update.img
+
+# --- 内核编译垃圾 ---
+/kernel-6.1/vmlinux
+/kernel-6.1/vmlinux.o
+/kernel-6.1/.tmp_*
+/kernel-6.1/Module.symvers
+/kernel-6.1/modules.builtin
+/kernel-6.1/modules.builtin.modinfo
+/kernel-6.1/modules.order
+/kernel-6.1/.config.old
+/kernel-6.1/arch/arm64/boot/Image
+/kernel-6.1/arch/arm64/boot/Image.gz
+/kernel-6.1/*.ko
+
+# --- U-Boot 编译垃圾 ---
+/u-boot/u-boot
+/u-boot/u-boot.bin
+/u-boot/u-boot.img
+/u-boot/spl/u-boot-spl.bin
+/u-boot/tpl/u-boot-tpl.bin
+
+# --- 不随仓库分发的工具链（按 README 单独安装）---
+/prebuilts/
+
+# --- 当前 Buildroot 配置未使用的系统、应用和组件 ---
+/docs/
+/debian/
+/yocto/
+/rtos/
+/hal/
+/app/ipcweb-backend/
+/app/rkadk/
+/app/rkipc/
+/app/rkpartybox/
+/external/avs/
+/external/common_algorithm/
+/external/dpdk/
+/external/drm-cursor/
+/external/iva/
+/external/minilogger/
+/external/rk_ethercat_release/
+/external/rk_pcba_test/
+/external/rkfsmk/
+/external/rknn-toolkit2/
+/external/rockit/
+/external/rockit_uvc/
+/external/samples/
+/external/security/
+/external/uac_app/
+/external/uvc_app/
+/external/xserver/
+
+# RK3576 为 aarch64，只保留对应的 Chromium 预编译包
+/external/chromium/*_armhf.tar.xz
+
+# --- RKNPU2：仅保留当前 Buildroot 使用的 Linux runtime 和 common test ---
+/external/rknpu2/doc/
+/external/rknpu2/runtime/Android/
+/external/rknpu2/examples/*
+!/external/rknpu2/examples/rknn_common_test/
+
+# --- Mali：RK3576 只使用 aarch64 g52/g24p0 Wayland+GBM 库 ---
+/external/libmali/optimize_s/
+/external/libmali/lib/*
+!/external/libmali/lib/aarch64-linux-gnu/
+/external/libmali/lib/aarch64-linux-gnu/*
+!/external/libmali/lib/aarch64-linux-gnu/libmali-bifrost-g52-g24p0-wayland-gbm.so
+
+# --- 与 Linux 构建无关的平台工具 ---
+/tools/windows/
+/tools/mac/
+/tools/linux/PinDebug/
+/tools/linux/rk_ddrbin_tool_V1.01.7z
+
+# --- GitHub 100MB 硬限制 ---
+/tools/linux/PinDebug/pin_debug_tool_v1.11_for_linux.tar
+/external/camera_engine_rkaiq/IspFec/src/gen_mesh/android/genMesh_static_64bit/libgenMeshLib.a
+/external/camera_engine_rkaiq/IspFec/src/gen_mesh/android/genMesh_static_32bit/libgenMeshLib.a
+/external/rknn-toolkit2/autosparsity/examples/resnet50.onnx
+
+# --- 原厂 repo 残留（损坏的 .git 链接，不要当子模块）---
+.repo/
+
+# --- 编辑器 / 本地 ---
+*.swp
+*.swo
+*~
+.vscode/
+.idea/

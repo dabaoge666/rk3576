@@ -1,0 +1,6 @@
+#include "base/base.config"
+#include "base/recovery.config"
+#include "chips/rk3576_aarch64.config"
+BR2_PACKAGE_PKGCONF=y
+BR2_PACKAGE_UTIL_LINUX_AGETTY=y
+BR2_PACKAGE_UTIL_LINUX_BINARIES=y

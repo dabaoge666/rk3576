@@ -1,0 +1,222 @@
+From c2ae9b49680e4e78fa443dea5d2703a960aafb35 Mon Sep 17 00:00:00 2001
+From: lyf <lyf@tronlong.com>
+Date: Fri, 3 Jan 2025 09:19:55 +0800
+Subject: [PATCH 4/5] tl3576_evm_ubuntu_defconfig: Add the configuration of the
+ ubuntu system
+
+---
+ .chips/rk3576/tl3576_evm_ubuntu_defconfig |  4 ++
+ common/configs/Config.in.rootfs           |  8 ++-
+ common/configs/Config.in.ubuntu           | 65 +++++++++++++++++++++++
+ common/scripts/mk-rootfs.sh               | 28 ++++++++--
+ 4 files changed, 100 insertions(+), 5 deletions(-)
+ create mode 100644 .chips/rk3576/tl3576_evm_ubuntu_defconfig
+ create mode 100644 common/configs/Config.in.ubuntu
+
+diff --git a/.chips/rk3576/tl3576_evm_ubuntu_defconfig b/.chips/rk3576/tl3576_evm_ubuntu_defconfig
+new file mode 100644
+index 0000000..bc0f50c
+--- /dev/null
++++ b/.chips/rk3576/tl3576_evm_ubuntu_defconfig
+@@ -0,0 +1,4 @@
++RK_UBOOT_SPL=y
++RK_KERNEL_DTS_NAME="tl3576-evm"
++RK_USE_FIT_IMG=y
++RK_ROOTFS_SYSTEM_UBUNTU=y
+diff --git a/common/configs/Config.in.rootfs b/common/configs/Config.in.rootfs
+index 1564a06..b2a15b4 100644
+--- a/common/configs/Config.in.rootfs
++++ b/common/configs/Config.in.rootfs
+@@ -4,7 +4,7 @@ comment "Rootfs system depends on linux kernel"
+ 	depends on !RK_KERNEL
+ 
+ menuconfig RK_ROOTFS
+-	bool "Rootfs (Buildroot|Debian|Yocto)"
++	bool "Rootfs (Buildroot|Debian|Yocto|Ubuntu)"
+ 	depends on RK_KERNEL
+ 	default y if !RK_AMP
+ 
+@@ -13,12 +13,14 @@ if RK_ROOTFS
+ source "Config.in.buildroot"
+ source "Config.in.yocto"
+ source "Config.in.debian"
++source "Config.in.ubuntu"
+ 
+ config RK_ROOTFS_SYSTEM
+ 	string
+ 	default "buildroot" if RK_ROOTFS_SYSTEM_BUILDROOT
+ 	default "debian" if RK_ROOTFS_SYSTEM_DEBIAN
+ 	default "yocto" if RK_ROOTFS_SYSTEM_YOCTO
++	default "ubuntu" if RK_ROOTFS_SYSTEM_UBUNTU
+ 
+ choice
+ 	prompt "default rootfs system"
+@@ -33,6 +35,10 @@ config RK_ROOTFS_SYSTEM_DEBIAN
+ 	bool "Debian"
+ 	depends on RK_DEBIAN
+ 
++config RK_ROOTFS_SYSTEM_UBUNTU
++	bool "Ubuntu"
++	depends on RK_UBUNTU
++
+ config RK_ROOTFS_SYSTEM_YOCTO
+ 	bool "Yocto"
+ 	depends on RK_YOCTO
+diff --git a/common/configs/Config.in.ubuntu b/common/configs/Config.in.ubuntu
+new file mode 100644
+index 0000000..f678e19
+--- /dev/null
++++ b/common/configs/Config.in.ubuntu
+@@ -0,0 +1,65 @@
++#
++
++config RK_UBUNTU_SUPPORTS
++	bool
++	default y if RK_CHIP_FAMILY = "rk3288" || RK_CHIP_FAMILY = "px30" || \
++		RK_CHIP_FAMILY = "rk3326" || RK_CHIP_FAMILY = "rk3328" || \
++		RK_CHIP_FAMILY = "rk3399" || RK_CHIP_FAMILY = "rk3399pro" || \
++		RK_CHIP_FAMILY = "rk3566_rk3568" || RK_CHIP_FAMILY = "rk3588" || \
++		RK_CHIP_FAMILY = "rk3562" || RK_CHIP_FAMILY = "rk3528" || \
++		RK_CHIP_FAMILY = "rk3576"
++
++comment "Ubuntu is not supported for this chip"
++	depends on !RK_UBUNTU_SUPPORTS
++
++menuconfig RK_UBUNTU
++	bool "Ubuntu"
++	depends on RK_UBUNTU_SUPPORTS
++	default y
++
++if RK_UBUNTU
++
++config RK_UBUNTU_VERSION
++	string
++	default "buster" if RK_UBUNTU_BUSTER
++	default "bullseye" if RK_UBUNTU_BULLSEYE
++	default "bookworm" if RK_UBUNTU_BOOKWORM
++
++choice
++	prompt "distro"
++	default RK_UBUNTU_BOOKWORM
++
++config RK_UBUNTU_BUSTER
++	bool "buster"
++
++config RK_UBUNTU_BULLSEYE
++	bool "bullseye"
++
++config RK_UBUNTU_BOOKWORM
++	bool "bookworm"
++
++endchoice # distro
++
++config RK_UBUNTU_ARCH
++	string
++	default "armhf" if RK_UBUNTU_ARMHF
++	default "arm64" if RK_UBUNTU_ARM64
++
++choice
++	prompt "rootfs arch"
++
++config RK_UBUNTU_ARM64
++	bool "arm64"
++	depends on !RK_CHIP_ARM32
++
++config RK_UBUNTU_ARMHF
++	bool "armhf"
++
++endchoice # rootfs arch
++
++config RK_UBUNTU_MIRROR
++	string "mirror source for APT"
++	default "mirrors.ustc.edu.cn"
++
++endif # Ubuntu
++endmenuconfig # Ubuntu
+diff --git a/common/scripts/mk-rootfs.sh b/common/scripts/mk-rootfs.sh
+index ef8a519..be27b0b 100755
+--- a/common/scripts/mk-rootfs.sh
++++ b/common/scripts/mk-rootfs.sh
+@@ -163,6 +163,23 @@ build_debian()
+ 	finish_build build_debian $@
+ }
+ 
++build_ubuntu()
++{
++	check_config RK_UBUNTU || false
++
++	IMAGE_DIR="${1:-$RK_OUTDIR/ubuntu}"
++
++	message "=========================================="
++	message "      Skip the ubuntu build    "
++	message "=========================================="
++
++	cd ubuntu
++
++	ln -rsf "$PWD/rootfs.img" "$IMAGE_DIR/rootfs.ext4"
++
++	finish_build build_ubuntu $@
++}
++
+ # Hooks
+ 
+ usage_hook()
+@@ -175,6 +192,7 @@ usage_hook()
+ 	echo -e "buildroot                         \tbuild buildroot rootfs"
+ 	echo -e "yocto                             \tbuild yocto rootfs"
+ 	echo -e "debian                            \tbuild debian rootfs"
++	echo -e "ubuntu							   \tbuild ubuntu rootfs"
+ }
+ 
+ clean_hook()
+@@ -189,11 +207,12 @@ clean_hook()
+ 	rm -rf "$RK_OUTDIR/buildroot"
+ 	rm -rf "$RK_OUTDIR/yocto"
+ 	rm -rf "$RK_OUTDIR/debian"
++	rm -rf "$RK_OUTDIR/ubuntu"
+ 	rm -rf "$RK_OUTDIR/rootfs"
+ 	rm -rf "$RK_FIRMWARE_DIR/rootfs.img"
+ }
+ 
+-INIT_CMDS="default buildroot debian yocto"
++INIT_CMDS="default buildroot debian yocto ubuntu"
+ init_hook()
+ {
+ 	load_config RK_ROOTFS
+@@ -258,7 +277,7 @@ pre_build_hook()
+ 	esac
+ }
+ 
+-BUILD_CMDS="rootfs buildroot debian yocto"
++BUILD_CMDS="rootfs buildroot debian yocto ubuntu"
+ build_hook()
+ {
+ 	check_config RK_ROOTFS || false
+@@ -278,7 +297,7 @@ build_hook()
+ 	message "=========================================="
+ 
+ 	case "$ROOTFS" in
+-		yocto | debian | buildroot) ;;
++		yocto | debian | buildroot | ubuntu) ;;
+ 		*) usage ;;
+ 	esac
+ 
+@@ -290,6 +309,7 @@ build_hook()
+ 	case "$ROOTFS" in
+ 		yocto) build_yocto "$IMAGE_DIR" ;;
+ 		debian) build_debian "$IMAGE_DIR" ;;
++		ubuntu) build_ubuntu "$IMAGE_DIR" ;;
+ 		buildroot) build_buildroot "$IMAGE_DIR" ;;
+ 	esac
+ 	touch "$ROOTFS_DIR/.stamp_build_finish"
+@@ -318,6 +338,6 @@ source "${RK_BUILD_HELPER:-$(dirname "$(realpath "$0")")/../build-hooks/build-he
+ 
+ case "${1:-rootfs}" in
+ 	buildroot-config | bconfig | buildroot-make | bmake) pre_build_hook $@ ;;
+-	buildroot | debian | yocto) init_hook $@ ;&
++	buildroot | debian | yocto | ubuntu) init_hook $@ ;&
+ 	*) build_hook $@ ;;
+ esac
+-- 
+2.34.1
+

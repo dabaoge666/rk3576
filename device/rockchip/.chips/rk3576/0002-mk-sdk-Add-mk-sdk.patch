@@ -1,0 +1,121 @@
+From 594564326a37a04ce1f032a68fe0dec8ffc28345 Mon Sep 17 00:00:00 2001
+From: lyf <897565549@qq.com>
+Date: Fri, 18 Oct 2024 14:19:37 +0800
+Subject: [PATCH 2/5] mk-sdk: Add mk-sdk
+
+Signed-off-by: cy@tronlong.com <cy>
+---
+ .gitignore           |  1 +
+ mk-sdk/mk-sdk.sh     | 41 +++++++++++++++++++++++++++++++++++++++++
+ mk-sdk/mk-sysroot.sh | 42 ++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 84 insertions(+)
+ create mode 100755 mk-sdk/mk-sdk.sh
+ create mode 100755 mk-sdk/mk-sysroot.sh
+
+diff --git a/.gitignore b/.gitignore
+index 4f07231..902d281 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -2,3 +2,4 @@
+ /*
+ !common/
+ !.chips/
++!mk-sdk/
+diff --git a/mk-sdk/mk-sdk.sh b/mk-sdk/mk-sdk.sh
+new file mode 100755
+index 0000000..142396e
+--- /dev/null
++++ b/mk-sdk/mk-sdk.sh
+@@ -0,0 +1,41 @@
++#!/bin/bash -e
++
++SCRIPTS_PATH=$(dirname "$0")
++SDK_PATH_=${SCRIPTS_PATH}/../../..
++BUILDROOT_PATH=${SDK_PATH_}/buildroot
++RK3576_DIR=${BUILDROOT_PATH}/output/rockchip_rk3576
++
++sudo rm -rf $SDK_PATH_/{app,debian,docs,rkflash.sh,tools,yocto,output}
++sudo rm -rf $BUILDROOT_PATH/dl
++
++for item in "$RK3576_DIR"/*; do
++    if [ -d "$item" ]; then
++        if [ "$(basename "$item")" != "host" ]; then
++            echo "Deleting directory: $item"  
++            sudo rm -rf "$item"
++        fi
++    else
++        echo "Deleting file: $item"
++        sudo rm -rf "$item"
++    fi
++done
++
++cd $RK3576_DIR
++ln -s ./host/aarch64-buildroot-linux-gnu/sysroot staging
++cd -
++
++cd ${SDK_PATH_}/kernel
++make distclean
++cd -
++
++# Delete unwanted files
++find "$SDK_PATH_" -type d -name '.repo' -exec sudo rm -rf {} +
++find "$SDK_PATH_" -type f -name '.git*' -exec sudo rm -f {} +
++find "$SDK_PATH_" -type d -name '.git*' -exec sudo rm -rf {} +
++sudo rm -rf $SCRIPTS_PATH
++
++RK3588_SDK_PATH=$(basename "$(pwd)")
++cd ..
++cp -r $RK3576_SDK_PATH rk3576-buildroot-2024.02-sdk-v1.0
++tar -zcvf rk3576-buildroot-2024.02-sdk-v1.0.tar.gz rk3576-buildroot-2024.02-sdk-v1.0
++
+diff --git a/mk-sdk/mk-sysroot.sh b/mk-sdk/mk-sysroot.sh
+new file mode 100755
+index 0000000..62658ad
+--- /dev/null
++++ b/mk-sdk/mk-sysroot.sh
+@@ -0,0 +1,42 @@
++#!/bin/bash -e
++
++SCRIPTS_PATH=$(dirname "$0")
++SDK_PATH_=${SCRIPTS_PATH}/../../..
++
++ENV_PATH=${SDK_PATH_}/buildroot/output/rockchip_rk3576/host/environment-setup
++sudo sed -i '69,$d' $ENV_PATH
++
++echo '_SDK_PATH=$(dirname "${BASH_SOURCE[0]}")' | sudo tee -a $ENV_PATH
++echo 'export _SDK_PATH="$(cd "$_SDK_PATH" && pwd)"' | sudo tee -a $ENV_PATH
++echo 'export SDK_QMAKE_SYSROOT=$_SDK_PATH/aarch64-buildroot-linux-gnu/sysroot' | sudo tee -a $ENV_PATH
++echo 'export QT_HOST_PREFIX=$_SDK_PATH' | sudo tee -a $ENV_PATH
++echo 'export PATH=$_SDK_PATH/bin:$PATH' | sudo tee -a $ENV_PATH
++echo 'export LD_LIBARY_PATH=$_SDK_PATH/../../../../prebuilts/gcc/linux-x86/aarch64/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/lib:$LD_LIBARY_PATH' | sudo tee -a $ENV_PATH
++
++echo "----------set environment success-----------"
++
++# Modify qt.conf, qdevice.pri, qconfig.pri and qmake.conf so that user can use sysroots in any path
++sudo sed -i 's/QMAKE_CFLAGS    += --sysroot=$$\[QT_SYSROOT\]/QMAKE_CFLAGS    += --sysroot=$$(SDK_QMAKE_SYSROOT)/g' $SDK_PATH_/buildroot/output/rockchip_rk3576/host/mkspecs/qconfig.pri
++sudo sed -i 's/QMAKE_CXXFLAGS  += --sysroot=$$\[QT_SYSROOT\]/QMAKE_CXXFLAGS  += --sysroot=$$(SDK_QMAKE_SYSROOT)/g' $SDK_PATH_/buildroot/output/rockchip_rk3576/host/mkspecs/qconfig.pri
++sudo sed -i 's/QMAKE_LFLAGS    += --sysroot=$$\[QT_SYSROOT\]/QMAKE_LFLAGS    += --sysroot=$$(SDK_QMAKE_SYSROOT)/g' $SDK_PATH_/buildroot/output/rockchip_rk3576/host/mkspecs/qconfig.pri
++sudo sed -i '17,18d' $SDK_PATH_/buildroot/output/rockchip_rk3576/host/mkspecs/qconfig.pri
++sudo sed -i '17i\
++PKG_CONFIG_SYSROOT_DIR = $$(SDK_QMAKE_SYSROOT)\
++PKG_CONFIG_LIBDIR = $$(SDK_QMAKE_SYSROOT)/usr/lib/pkgconfig:$$(SDK_QMAKE_SYSROOT)/usr/share/pkgconfig:$$(SDK_QMAKE_SYSROOT)/usr/lib/aarch64-linux-gnu/pkgconfig' $SDK_PATH_/buildroot/output/rockchip_rk3576/host/mkspecs/qconfig.pri
++sudo sed -i 's/QMAKE_LINK              = $$(SDK_QMAKE_CXX)/QMAKE_LINK              = $$(SDK_QMAKE_CXX) -L $$(SDK_QMAKE_SYSROOT)\/usr\/lib\/aarch64-linux-gnu/g' $SDK_PATH_/buildroot/output/rockchip_rk3576/host/mkspecs/linux-aarch64-gnu-g++/qmake.conf
++
++sudo sed -i 's/^HostPrefix=.*$/HostPrefix=$(QT_HOST_PREFIX)/' "$SDK_PATH_/buildroot/output/rockchip_rk3576/host/bin/qt.conf"
++sudo sed -i 's/^Sysroot=.*$/Sysroot=$(SDK_QMAKE_SYSROOT)/' "$SDK_PATH_/buildroot/output/rockchip_rk3576/host/bin/qt.conf"
++
++sudo sed -i "s|^CROSS_COMPILE = .*$|CROSS_COMPILE = \$\{_SDK_PATH\}/../../../../prebuilts/gcc/linux-x86/aarch64/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-|" "$SDK_PATH_/buildroot/output/rockchip_rk3576/host/mkspecs/qdevice.pri"  
++
++# Replace absolute paths with relative paths in sysroot
++HOST_PATH=$SDK_PATH_/buildroot/output/rockchip_rk3576/host/
++
++cd $HOST_PATH
++HOST_PATH=$(pwd)
++
++find . -type f -name "*.pri" -exec sed -i "s|${HOST_PATH}|\${QT_HOST_PREFIX}|g" {} +  
++
++cd ..
++
+-- 
+2.34.1
+
