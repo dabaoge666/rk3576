@@ -1,32 +1,39 @@
-cat > /usr/bin/gst-camera.sh << 'EOF'
+cat > /usr/bin/gst-camera.sh <<'EOF'
 #!/bin/sh
-DEV=${1:-/dev/video31}
+killall rkaiq_3A_server gst-launch-1.0 2>/dev/null
+rm -f /etc/iqfiles/FakeCamera0.json
+
+if ! media-ctl -p -d /dev/media3 2>/dev/null | grep -q rkcif-mipi-lvds1; then
+    echo rkisp-vir2 > /sys/bus/platform/drivers/rkisp/unbind
+    sleep 1
+    echo rkisp-vir2 > /sys/bus/platform/drivers/rkisp/bind
+    sleep 2
+fi
+
+DEV=$(media-ctl -d /dev/media3 -e rkisp_mainpath)
 
 /etc/init.d/S49weston stop 2>/dev/null
-killall weston gst-launch-1.0 rkaiq_3A_server 2>/dev/null
+killall weston weston-desktop chromium 2>/dev/null
 sleep 2
 
-mkdir -p /run/user/0 && chmod 700 /run/user/0
+mkdir -p /run/user/0
+chmod 700 /run/user/0
 export XDG_RUNTIME_DIR=/run/user/0
 export WAYLAND_DISPLAY=wayland-0
 export WESTON_DRM_PRIMARY=HDMI-A-1
 export WESTON_DRM_SINGLE_HEAD=1
-unset WESTON_DRM_MIRROR
 export WESTON_NO_BACKGROUND=1
+unset WESTON_DRM_MIRROR
+
 printf 'output:DSI-1:state=off\noutput:HDMI-A-1:mode=1920x1080\n' > /tmp/.weston_drm.conf
 
 weston --idle-time=0 >/var/log/weston.log 2>&1 &
 sleep 4
 
-if ls /etc/iqfiles/ov13855*.json >/dev/null 2>&1; then
-    rkaiq_3A_server >/tmp/rkaiq.log 2>&1 &
-    sleep 2
-fi
-
-exec gst-launch-1.0 -e v4l2src device=$DEV io-mode=4 \
-    ! video/x-raw,format=NV12,width=1920,height=1080,framerate=30/1 \
-    ! videoconvert ! waylandsink fullscreen=true sync=false
+exec gst-launch-1.0 -e v4l2src device="$DEV" io-mode=4 \
+  ! video/x-raw,format=NV12,width=1920,height=1080,framerate=30/1 \
+  ! videoconvert ! waylandsink fullscreen=true sync=false
 EOF
-chmod +x /usr/bin/gst-camera.sh
 
+chmod +x /usr/bin/gst-camera.sh
 gst-camera.sh
