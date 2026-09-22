@@ -688,21 +688,9 @@ void rockchip_drm_dbg_thread_info(const struct device *dev,
 				  enum rockchip_drm_debug_category category,
 				  const char *format, ...);
 
-extern struct platform_driver cdn_dp_driver;
 extern struct platform_driver dw_hdmi_rockchip_pltfm_driver;
-extern struct platform_driver dw_mipi_dsi_rockchip_driver;
 extern struct platform_driver dw_mipi_dsi2_rockchip_driver;
-extern struct platform_driver inno_hdmi_driver;
-extern struct platform_driver rockchip_dp_driver;
-extern struct platform_driver rockchip_lvds_driver;
-extern struct platform_driver vop_platform_driver;
-extern struct platform_driver rk3066_hdmi_driver;
 extern struct platform_driver vop2_platform_driver;
-extern struct platform_driver rockchip_rgb_driver;
-extern struct platform_driver rockchip_tve_driver;
-extern struct platform_driver dw_dp_driver;
-extern struct platform_driver vconn_platform_driver;
-extern struct platform_driver vvop_platform_driver;
 
 static inline struct rockchip_encoder *to_rockchip_encoder(struct drm_encoder *encoder)
 {

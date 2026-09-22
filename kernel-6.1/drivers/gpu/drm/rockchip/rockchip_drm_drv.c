@@ -66,11 +66,7 @@
 	    (idx) += sizeof(struct displayid_block) + (block)->num_bytes, \
 	    (block) = (struct displayid_block *)&(displayid)[idx])
 
-#if IS_ENABLED(CONFIG_DRM_ROCKCHIP_VVOP)
-static bool is_support_iommu = false;
-#else
 static bool is_support_iommu = true;
-#endif
 static bool iommu_reserve_map;
 
 static struct drm_driver rockchip_drm_driver;
@@ -2429,10 +2425,8 @@ static int rockchip_drm_platform_probe(struct platform_device *pdev)
 	int ret;
 
 	ret = rockchip_drm_platform_of_probe(dev);
-#if !IS_ENABLED(CONFIG_DRM_ROCKCHIP_VVOP)
 	if (ret)
 		return ret;
-#endif
 
 	match = rockchip_drm_match_add(dev);
 	if (IS_ERR(match))
@@ -2501,31 +2495,12 @@ static int __init rockchip_drm_init(void)
 		return -ENODEV;
 
 	num_rockchip_sub_drivers = 0;
-#if IS_ENABLED(CONFIG_DRM_ROCKCHIP_VVOP)
-	ADD_ROCKCHIP_SUB_DRIVER(vvop_platform_driver, CONFIG_DRM_ROCKCHIP_VVOP);
-#else
-	ADD_ROCKCHIP_SUB_DRIVER(vop_platform_driver, CONFIG_ROCKCHIP_VOP);
 	ADD_ROCKCHIP_SUB_DRIVER(vop2_platform_driver, CONFIG_ROCKCHIP_VOP2);
-	ADD_ROCKCHIP_SUB_DRIVER(vconn_platform_driver, CONFIG_ROCKCHIP_VCONN);
-	ADD_ROCKCHIP_SUB_DRIVER(rockchip_lvds_driver,
-				CONFIG_ROCKCHIP_LVDS);
-	ADD_ROCKCHIP_SUB_DRIVER(rockchip_dp_driver,
-				CONFIG_ROCKCHIP_ANALOGIX_DP);
-	ADD_ROCKCHIP_SUB_DRIVER(cdn_dp_driver, CONFIG_ROCKCHIP_CDN_DP);
 	ADD_ROCKCHIP_SUB_DRIVER(dw_hdmi_rockchip_pltfm_driver,
 				CONFIG_ROCKCHIP_DW_HDMI);
-	ADD_ROCKCHIP_SUB_DRIVER(dw_mipi_dsi_rockchip_driver,
-				CONFIG_ROCKCHIP_DW_MIPI_DSI);
 	ADD_ROCKCHIP_SUB_DRIVER(dw_mipi_dsi2_rockchip_driver,
 				CONFIG_ROCKCHIP_DW_MIPI_DSI2);
-	ADD_ROCKCHIP_SUB_DRIVER(inno_hdmi_driver, CONFIG_ROCKCHIP_INNO_HDMI);
-	ADD_ROCKCHIP_SUB_DRIVER(rk3066_hdmi_driver,
-				CONFIG_ROCKCHIP_RK3066_HDMI);
-	ADD_ROCKCHIP_SUB_DRIVER(rockchip_rgb_driver, CONFIG_ROCKCHIP_RGB);
-	ADD_ROCKCHIP_SUB_DRIVER(rockchip_tve_driver, CONFIG_ROCKCHIP_DRM_TVE);
-	ADD_ROCKCHIP_SUB_DRIVER(dw_dp_driver, CONFIG_ROCKCHIP_DW_DP);
 
-#endif
 	ret = platform_register_drivers(rockchip_sub_drivers,
 					num_rockchip_sub_drivers);
 	if (ret)

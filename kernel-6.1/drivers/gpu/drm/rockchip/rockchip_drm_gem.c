@@ -444,7 +444,7 @@ static void rockchip_gem_free_secure(struct rockchip_gem_object *rk_obj)
 
 static inline bool is_vop_enabled(void)
 {
-	return (IS_ENABLED(CONFIG_ROCKCHIP_VOP) || IS_ENABLED(CONFIG_ROCKCHIP_VOP2));
+	return IS_ENABLED(CONFIG_ROCKCHIP_VOP2);
 }
 
 static int rockchip_gem_alloc_buf(struct rockchip_gem_object *rk_obj,

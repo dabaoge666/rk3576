@@ -177,20 +177,20 @@
 };
 
 &dp {
-	status = "okay";
+	status = "disabled";
 	svid = <0xff01>;
 };
 
 &dp0 {
-	status = "okay";
+	status = "disabled";
 };
 
 &dp0_in_vp0 {
-	status = "okay";
+	status = "disabled";
 };
 
 &dp0_sound {
-	status = "okay";
+	status = "disabled";
 };
 
 /*
