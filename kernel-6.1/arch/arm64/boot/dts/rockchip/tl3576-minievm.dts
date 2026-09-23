@@ -302,18 +302,13 @@
 				<PDO_FIXED(5000, 1000, PDO_FIXED_USB_COMM)>;
 			source-pdos =
 				<PDO_FIXED(5000, 3000, PDO_FIXED_USB_COMM)>;
-			mode-switch = <&dp>;
 
-			altmodes {
-				#address-cells = <1>;
-				#size-cells = <0>;
-
-				altmode@0 {
-					reg = <0>;
-					svid = <0xff01>;
-					vdo = <0xffffffff>;
-				};
-			};
+			/*
+			 * 本板不引出 DP，dp 节点为 disabled 且 dw-dp 驱动未编入。
+			 * mode-switch = <&dp> 会让 typec_register_port() 一直
+			 * 等待 dp 上注册 typec mux 而返回 -EPROBE_DEFER，husb311
+			 * 永久 defer，Type-C 口的 USB 角色切换随之失效。
+			 */
 
 			ports {
 				#address-cells = <1>;
