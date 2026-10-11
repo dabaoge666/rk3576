@@ -572,6 +572,7 @@
 
 &dsi {
 	status = "okay";
+	rockchip,lane-rate = <272>;
 
 	dsi_panel: panel@0 {
 		status = "okay";
@@ -661,7 +662,7 @@
 		disp_timings0: display-timings {
 			native-mode = <&dsi_timing0>;
 			dsi_timing0: timing0 {
-				clock-frequency = <67200000>;
+				clock-frequency = <40800000>;
                 hactive = <800>;
                 vactive = <1280>;
                 hfront-porch = <80>;
